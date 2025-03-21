@@ -1,4 +1,12 @@
-pytest==7.4.3
-pytest-asyncio==0.21.1
-httpx==0.25.2
-pytest-cov==4.1.0 
+astapi
+FastAPI
+gunicorn
+uvicorn
+python-docx
+python-pptx
+pandas
+requests
+python-dotenv
+openai
+msal
+itsdangerous>=2.2.0
