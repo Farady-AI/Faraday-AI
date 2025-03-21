@@ -1,34 +1,46 @@
-from pydantic import BaseSettings
-from typing import Optional, Dict, Any
-import os
-from dotenv import load_dotenv
+from openai import AsyncOpenAI
+from loguru import logger
+from app.config import get_settings
+import httpx
 
-load_dotenv()
+class ChatGPTService:
+    def __init__(self):
+        logger.debug("Creating new ChatGPTService instance")
+        self.settings = get_settings()
+        logger.debug("Initializing ChatGPTService")
+        
+        try:
+            logger.debug("Creating AsyncOpenAI client")
+            # Initialize OpenAI client with just the API key
+            self.client = AsyncOpenAI(api_key=self.settings.openai_api_key)
+            
+            # Set default model
+            self.model = "gpt-3.5-turbo"
+            logger.debug("Successfully created AsyncOpenAI client")
+        except Exception as e:
+            logger.error(f"Error initializing OpenAI client: {str(e)}")
+            raise
 
-class ChatGPTConfig(BaseSettings):
-    # OpenAI API Configuration
-    api_key: str = os.getenv("OPENAI_API_KEY", "")
-    model: str = os.getenv("GPT_MODEL", "gpt-4-turbo-preview")
-    max_tokens: int = int(os.getenv("MAX_TOKENS", "2000"))
-    temperature: float = float(os.getenv("TEMPERATURE", "0.7"))
-    
-    # System Messages for Different Contexts
-    system_prompts: Dict[str, str] = {
-        "default": "You are an AI teaching assistant helping with Physical Education curriculum development.",
-        "lesson_plan": "You are an AI curriculum specialist focused on creating detailed PE lesson plans.",
-        "assessment": "You are an AI assessment specialist helping create PE evaluation criteria.",
-        "adaptation": "You are an AI specialist in adapting PE activities for different ability levels."
-    }
-    
-    # Beta Phase Settings
-    is_beta: bool = os.getenv("APP_ENVIRONMENT") == "beta"
-    debug_mode: bool = os.getenv("DEBUG", "False").lower() == "true"
-    
-    # Response Configuration
-    stream_response: bool = True
-    include_citations: bool = True
-    
-    class Config:
-        env_file = ".env"
+    async def send_message(self, message: str) -> str:
+        try:
+            logger.debug(f"Sending message to OpenAI: {message}")
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": message}],
+                temperature=0.7,
+                max_tokens=1000,
+                stream=False
+            )
+            logger.debug("Received response from OpenAI")
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"Error in send_message: {str(e)}")
+            raise
 
-chatgpt_settings = ChatGPTConfig() 
+_chatgpt_service = None
+
+def get_chatgpt_service() -> ChatGPTService:
+    global _chatgpt_service
+    if _chatgpt_service is None:
+        _chatgpt_service = ChatGPTService()
+    return _chatgpt_service
