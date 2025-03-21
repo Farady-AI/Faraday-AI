@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict
 from datetime import date, time
 from enum import Enum
@@ -142,8 +142,8 @@ class LessonPlan(BaseModel):
         description="Planning notes for future lessons based on this lesson's outcomes"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "teacher_name": "John Doe",
                 "subject": "Physical Education",
@@ -231,4 +231,5 @@ class LessonPlan(BaseModel):
                 "reflection": "Students showed good progress",
                 "next_steps": "Introduce crossover dribble next lesson"
             }
-        } 
+        }
+    ) 
